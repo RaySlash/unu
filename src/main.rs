@@ -3,22 +3,19 @@
 // pacman = 1000
 // aur = 999
 // nix = 998
-// ........
 //
 // Basic working Principles
 // From user (Vec<strings>) as arguments
 // Parse and dump in terminal with pacman/nix acc to priority
 //
 // Forcasted commands:  ( ?? indicate optional )
-// unu package ?{source}? 
-// eg: unu cargo nix
+// unu function package
+// eg: unu install cargo
 use std::{process, env};
-use serde::Serialize;
 
-#[derive(Serialize)]
 struct Config {
+    function: String,
     package: String,
-    source: String,
 }
 
 fn main() {
@@ -30,18 +27,33 @@ fn main() {
         process::exit(1);
     });
 
-    println!("{}", config.package);
-    println!("{}", config.source);
+    let (_x,_y,z) = ("pacman", "aur", "nix");
+
+    let output = process::Command::new(format!("{}", z)) // Set x/y/z
+        .arg(config.function)
+        .arg(config.package)
+        .output().unwrap_or_else(|e| {
+            panic!("Failed to execute process: {}", e)
+    });
+
+    if output.status.success() {
+        let tmp = String::from_utf8_lossy(&output.stdout);
+        println!("Success: {}", tmp);
+    } else {
+        let tmp = String::from_utf8_lossy(&output.stderr);
+        println!("Error: {}", tmp);
+    }
 
 }
 
 fn parse_args(args: &[String]) -> Result<Config, &'static str> {
-    if !args.len() == 3 {
+
+    if args.len() != 2 {
         return Err("Program expects 2 arguments!");
     } else {
-        let package = &args[1];
-        let source = &args[2];
+        let function= &args[1];
+        let package = &args[2];
 
-        Ok(Config { package: package.to_string(), source: source.to_string() })
+        Ok(Config {function: function.to_string(), package: package.to_string(), })
     }
 }
